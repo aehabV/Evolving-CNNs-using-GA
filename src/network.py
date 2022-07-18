@@ -1,8 +1,6 @@
 import tensorflow as tf
 import os
-
 from keras.callbacks import Callback
-
 from utilities import save_network, load_network
 from keras.models import Sequential
 from topology import Convolutional, Pooling, Dropout, Block
@@ -104,12 +102,12 @@ class Network:
                               filter_size=(3, 3),
                               stride_size=(1, 1),
                               padding='same',
-                              input_shape=dataset['x_train'].shape[1:]),
+                              input_shape=dataset['x_train'].shape),
                 Convolutional(filters=pow(2, randint(5, 8)),
                               filter_size=(3, 3),
                               stride_size=(1, 1),
                               padding='same',
-                              input_shape=dataset['x_train'].shape[1:])
+                              input_shape=dataset['x_train'].shape)
             ]
             layerList2 = [
                 Pooling(pool_size=(2, 2),
@@ -146,7 +144,7 @@ class Network:
                                       filter_size=(3, 3),
                                       stride_size=(1, 1),
                                       padding='same',
-                                      input_shape=dataset['x_train'].shape[1:])
+                                      input_shape=dataset['x_train'].shape)
                 layerList.insert(randint(0, length - 1), layer)
             else:
                 if randint(0, 1):                               # 1 -> Pooling; 0 -> Dropout
@@ -182,7 +180,7 @@ class Network:
                                       filter_size=(3, 3),
                                       stride_size=(1, 1),
                                       padding='same',
-                                      input_shape=dataset['x_train'].shape[1:])
+                                      input_shape=dataset['x_train'].shape)
                 self.block_list[block_idx].layerList1.append(layer)
                 return
             else:
@@ -205,7 +203,7 @@ class Network:
                                        filter_size=(3, 3),
                                        stride_size=(2, 2),
                                        padding=layer.padding,
-                                       input_shape=dataset['x_train'].shape[1:])
+                                       input_shape=dataset['x_train'].shape)
             layerList.insert(idx, conv_layer)
 
     def parameters_mutation(self):

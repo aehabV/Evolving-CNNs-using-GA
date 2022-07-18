@@ -1,21 +1,68 @@
-from keras.datasets import cifar10
-from keras.utils import to_categorical
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
+from tqdm import tqdm
+from PIL import Image
+import numpy as np
+from tensorflow.keras.utils import to_categorical
 import pickle
-import sys
 from matplotlib import pyplot as plt
+import sys
 
 
-def load_dataset(batch_size, num_classes, epochs):  					# retrieve CIFAR10 dataset and process data
-    (x_train, y_train), (x_test, y_test) = cifar10.load_data()
-    x_train = x_train.astype('float32')								# convert from integers to floats
-    x_test = x_test.astype('float32')
-    x_train /= 255														# normalize to range 0-1
-    x_test /= 255
-    y_train = to_categorical(y_train, num_classes)  					# one-hot encoding
-    y_test = to_categorical(y_test, num_classes)
+def load_dataset(train_dir, test_dir, batches, epochs):
 
+    datagen = image.ImageDataGenerator(featurewise_center=False,
+    featurewise_std_normalization=False,
+    rotation_range=135,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    vertical_flip=True,
+    horizontal_flip=True,
+    fill_mode="nearest")
+    
+    train_dataset = datagen.flow_from_directory(train_dir,
+    target_size=(224, 224),
+    color_mode="rgb",
+    batch_size=batches,
+    shuffle=True,               
+    class_mode="categorical" 
+    )
+
+    test_dataset = datagen.flow_from_directory(test_dir,
+    target_size=(224, 224),
+    color_mode="rgb",
+    batch_size=batches,
+    shuffle=True,               
+    class_mode="categorical"
+    )
+        
+    train, test = ([] for l in range(2)) 
+    trainPath = train_dataset.directory
+    testPath = test_dataset.directory
+
+    for i in tqdm (range(train_dataset.samples), desc="Loading training images", colour='#D1B37D'):
+      imgPath = Image.open(trainPath+train_dataset.filenames[i])
+      img = np.array(imgPath)
+      train.append(img)  
+      
+    for i in tqdm (range(test_dataset.samples), desc="Loading tesing images", colour='#1482F7'):
+      imgPath = Image.open(testPath+test_dataset.filenames[i])
+      img = np.array(imgPath)
+      test.append(img)    
+    
+    x_train = np.array(train)
+    x_test = np.array(test)
+    y_train = to_categorical(train_dataset.labels)
+    y_test = to_categorical(test_dataset.labels)
+    num_classes = train_dataset.num_classes
+    
+    print("Batch Size --> {}".format(batches))
+    print("Num of Classes --> {}".format(num_classes))
+    print("Num of Epochs --> {}".format(epochs))
+    
+    
     dataset = {
-        'batch_size': batch_size,
+        'batch_size': batches,
         'num_classes': num_classes,
         'epochs': epochs,
         'x_train': x_train,
@@ -23,9 +70,7 @@ def load_dataset(batch_size, num_classes, epochs):  					# retrieve CIFAR10 data
         'y_train': y_train,
         'y_test': y_test
     }
-
     return dataset
-
 
 def save_network(network):
     object_file = open(network.name + '.obj', 'wb')
@@ -57,8 +102,8 @@ def plot_training(history):                                           # plot dia
     plt.savefig(filename + '_loss_plot.png')
 
     plt.figure(figsize=[8, 6])											# accuracy curves
-    plt.plot(history.history['acc'], 'r', linewidth=3.0)
-    plt.plot(history.history['val_acc'], 'b', linewidth=3.0)
+    plt.plot(history.history['accuracy'], 'r', linewidth=3.0)
+    plt.plot(history.history['val_accuracy'], 'b', linewidth=3.0)
     plt.legend(['Training Accuracy', 'Validation Accuracy'], fontsize=18)
     plt.xlabel('Epochs ', fontsize=16)
     plt.ylabel('Accuracy', fontsize=16)
